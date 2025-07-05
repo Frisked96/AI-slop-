@@ -25,8 +25,11 @@ class UIManager:
                     row_str += tile_char
             print(row_str)
 
-    def display_player_stats(self, player):
-        print(f"Health: {player.health}/{player.max_health} Attack: {player.attack} Defense: {player.defense})")
+    def display_player_stats(self, player, game_state):
+        stats_string = f"Health: {player.health}/{player.max_health} Attack: {player.attack} Defense: {player.defense}"
+        if game_state and game_state.game_map and game_state.game_map.current_map_type == "dungeon":
+            stats_string += f" Dungeon Level: {game_state.dungeon_level}"
+        print(stats_string)
 
     def display_log(self, messages):
         print("\n--- Log ---")
