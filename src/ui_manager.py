@@ -1,4 +1,5 @@
 import os
+from .tiles import TrapTile # Ensure TrapTile is imported at the top
 
 class UIManager:
     def __init__(self):
@@ -18,11 +19,13 @@ class UIManager:
         for y in range(game_map.height):
             row_str = ""
             for x in range(game_map.width):
-                tile_char = game_map.get_tile_type(x, y)
+                tile = game_map.grid[y][x] # Get the tile object
                 if x == player.x and y == player.y:
                     row_str += '@'
+                # All tiles, including TrapTile, now correctly manage their 'character' attribute
+                # based on their state (e.g., revealed/unrevealed for traps).
                 else:
-                    row_str += tile_char
+                    row_str += tile.character
             print(row_str)
 
     def display_player_stats(self, player, game_state):

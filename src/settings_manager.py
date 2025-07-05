@@ -19,7 +19,11 @@ class SettingsManager:
     def _get_default_settings(self):
         return {
             "autosave_enabled": True,
-            "autosave_interval": 10 # Steps
+            "autosave_interval": 10, # Steps
+            "map_width": 80, # Default map width
+            "map_height": 24, # Default map height
+            "autosave_overwrite_behavior": "ask_once", # Default overwrite behavior
+            "debug_visible_traps": False # Default for the new setting
         }
 
     def _save_settings(self):

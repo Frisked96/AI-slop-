@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.3] - 2025-07-05
+
+### Added
+- Trap tiles to dungeon levels (3 and above).
+  - Traps are normally hidden ('.') but can be made visible ('$') via a debug setting (`debug_visible_traps` in `settings.json`).
+  - Two traps spawn per eligible dungeon map.
+  - Traps activate when the player is within a 1-tile radius (including stepping directly on them).
+  - Activation reveals the trap as '+' and deals 2 HP damage to the player.
+  - Each trap only triggers and damages the player once.
+- `debug_visible_traps` setting to `settings.json` and `SettingsManager` to control trap visibility for testing.
+
+### Changed
+- `TrapTile` class in `src/tiles.py`:
+  - Character defaults to `.` but can be set to `'$'` for debug mode via `MapGenerator`.
+  - Manages its own revealed state and appearance ('+').
+  - Trigger logic ensures it only activates once.
+- `MapGenerator` in `src/map_generator.py`:
+  - Spawns trap tiles on valid floor locations in dungeon levels 3+.
+  - Checks `debug_visible_traps` setting to determine initial trap character ('.' or '$').
+  - Removed logging of trap placement coordinates.
+- `InteractionManager` in `src/interaction_manager.py`:
+  - Handles proximity-based activation of trap tiles.
+  - Triggers trap reveal and damage when player is within 1-tile radius.
+- `UIManager` in `src/ui_manager.py`:
+  - Simplified map display logic to rely on `tile.character` for all tiles, as `TrapTile` now manages its own character display.
+
+### Fixed
+- `AttributeError: 'NoneType' object has no attribute 'current_map_type'` during initial map generation by correctly using the `map_type` parameter in `MapGenerator` for trap spawning conditions.
+
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
