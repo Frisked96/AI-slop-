@@ -1,7 +1,5 @@
 import json
 import os
-from .utils import clear_screen # Import clear_screen from utils
-from .menu import Menu # Import Menu
 
 SETTINGS_FILE = 'settings.json'
 
@@ -31,59 +29,94 @@ class SettingsManager:
         except IOError as e:
             print(f"Error saving settings: {e}. Please check file permissions.")
 
-    def get_setting(self, key):
-        return self.settings.get(key, self._get_default_settings().get(key))
+    def get_setting(self, key, default=None):
+        return self.settings.get(key, default if default is not None else self._get_default_settings().get(key))
 
     def set_setting(self, key, value):
         self.settings[key] = value
         self._save_settings()
 
-class SettingsMenu(Menu): # Inherit from Menu
-    def __init__(self, settings_manager, game_engine): # Add game_engine parameter
-        super().__init__(game_engine) # Call parent constructor
-        self.settings_manager = settings_manager
-    def __init__(self, settings_manager):
-        self.settings_manager = settings_manager
+class SettingsMenu:
+    def __init__(self, game_state, is_in_game=False):
+        self.game_state = game_state
+        self.is_in_game = is_in_game
+        self.options = {}
+        self._build_options()
+
+    def _build_options(self):
         self.options = {
             "1": "Toggle Autosave",
             "2": "Set Autosave Interval",
-            "3": "Back to Main Menu"
         }
+        if not self.is_in_game:
+            self.options["3"] = "Set Map Width"
+            self.options["4"] = "Set Map Height"
+            self.options["5"] = "Back"
+        else:
+            self.options["3"] = "Back"
 
-    def display_menu(self):
-        clear_screen()
-        print("\n--- Settings ---")
-        print(f"Autosave Enabled: {self.settings_manager.get_setting("autosave_enabled")}")
-        print(f"Autosave Interval: {self.settings_manager.get_setting("autosave_interval")} steps")
-        for key, value in self.options.items():
-            print(f"{key}. {value}")
+    def display(self):
+        self.game_state.ui_manager.display_settings_menu(self.game_state.settings_manager, self.options, self.is_in_game)
 
-    def run(self, game_engine): # Accept game_engine as argument
-        self.game = game_engine # Set the game engine for the settings menu
-        while True:
-            self.display_menu()
-            choice = input("Enter your choice: ").strip()
-
-            if choice == "1":
-                current_status = self.settings_manager.get_setting("autosave_enabled")
-                self.settings_manager.set_setting("autosave_enabled", not current_status)
-                print(f"Autosave is now {'Enabled' if not current_status else 'Disabled'}.")
-                input("Press Enter to continue...")
-            elif choice == "2":
+    def handle_input(self, choice):
+        if choice == "1":
+            current_status = self.game_state.settings_manager.get_setting("autosave_enabled")
+            self.game_state.settings_manager.set_setting("autosave_enabled", not current_status)
+            self.game_state.logger.add_message(f"Autosave is now {'Enabled' if not current_status else 'Disabled'}.")
+        elif choice == "2":
+            while True:
+                try:
+                    new_interval_str = self.game_state.ui_manager.get_input("Enter new autosave interval (steps): ")
+                    if new_interval_str is None:  # Handle potential cancellation from get_input
+                        break
+                    new_interval = int(new_interval_str)
+                    if new_interval > 0:
+                        self.game_state.settings_manager.set_setting("autosave_interval", new_interval)
+                        self.game_state.logger.add_message(f"Autosave interval set to {new_interval} steps.")
+                        break
+                    else:
+                        self.game_state.logger.add_message("Interval must be a positive number.")
+                except ValueError:
+                    self.game_state.logger.add_message("Invalid input. Please enter a number.")
+        elif choice == "3": # This will be "Set Map Width" or "Back" depending on is_in_game
+            if not self.is_in_game:
                 while True:
                     try:
-                        new_interval = int(input("Enter new autosave interval (steps): "))
-                        if new_interval > 0:
-                            self.settings_manager.set_setting("autosave_interval", new_interval)
-                            print(f"Autosave interval set to {new_interval} steps.")
+                        new_width_str = self.game_state.ui_manager.get_input("Enter new map width: ")
+                        if new_width_str is None:
+                            break
+                        new_width = int(new_width_str)
+                        if new_width > 0:
+                            self.game_state.settings_manager.set_setting("map_width", new_width)
+                            self.game_state.logger.add_message(f"Map width set to {new_width}.")
                             break
                         else:
-                            print("Interval must be a positive number.")
+                            self.game_state.logger.add_message("Width must be a positive number.")
                     except ValueError:
-                        print("Invalid input. Please enter a number.")
-                input("Press Enter to continue...")
-            elif choice == "3":
-                break
+                        self.game_state.logger.add_message("Invalid input. Please enter a number.")
             else:
-                print("Invalid choice. Please try again.")
-                input("Press Enter to continue...")
+                return True  # Back option when in-game
+        elif choice == "4": # This will be "Set Map Height" or invalid depending on is_in_game
+            if not self.is_in_game:
+                while True:
+                    try:
+                        new_height_str = self.game_state.ui_manager.get_input("Enter new map height: ")
+                        if new_height_str is None:
+                            break
+                        new_height = int(new_height_str)
+                        if new_height > 0:
+                            self.game_state.settings_manager.set_setting("map_height", new_height)
+                            self.game_state.logger.add_message(f"Map height set to {new_height}.")
+                            break
+                        else:
+                            self.game_state.logger.add_message("Height must be a positive number.")
+                    except ValueError:
+                        self.game_state.logger.add_message("Invalid input. Please enter a number.")
+            else:
+                self.game_state.logger.add_message("Invalid choice.") # Should not happen if options are built correctly
+        elif choice == "5": # This will be "Back" or invalid depending on is_in_game
+            if not self.is_in_game:
+                return True  # Back option when not in-game
+            else:
+                self.game_state.logger.add_message("Invalid choice.") # Should not happen if options are built correctly
+        return False

@@ -48,5 +48,9 @@ class CityCenterEntranceTile(Tile):
         super().__init__('C', True)
 
 class BlacksmithShopTile(Tile):
+    def __init__(self, char='B'):
+        super().__init__(char, True)
+
+class DoorTile(Tile):
     def __init__(self):
-        super().__init__('B', True)
+        super().__init__('\\', True)

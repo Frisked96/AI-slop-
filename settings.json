@@ -1,4 +1,7 @@
 {
     "autosave_enabled": true,
-    "autosave_interval": 3
+    "autosave_interval": 3,
+    "map_width": 100,
+    "map_height": 20,
+    "autosave_overwrite_behavior": "ask_once"
 }

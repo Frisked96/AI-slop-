@@ -1,10 +1,105 @@
+
+
+
+
+
 class CommandHandler:
-    def __init__(self, game_engine):
-        self.game = game_engine
+    def __init__(self, game_state):
+        self.game_state = game_state
+
+    def _handle_movement_command(self, key):
+        prev_x, prev_y = self.game_state.player.x, self.game_state.player.y
+        moved = False
+        if key == 'w':
+            self.game_state.player.move(0, -1, self.game_state.game_map)
+            moved = True
+        elif key == 's':
+            self.game_state.player.move(0, 1, self.game_state.game_map)
+            moved = True
+        elif key == 'a':
+            self.game_state.player.move(-1, 0, self.game_state.game_map)
+            moved = True
+        elif key == 'd':
+            self.game_state.player.move(1, 0, self.game_state.game_map)
+            moved = True
+        return moved, prev_x, prev_y
+
+    def _handle_quit_command(self):
+        self.game_state.is_running = False
+        return False
+
+    def _handle_save_command(self):
+        available_saves = self.game_state.save_manager.list_saves()
+        self.game_state.ui_manager.display_save_screen(available_saves)
+        filename = self.game_state.ui_manager.get_input("").strip().lower()
+        if filename == 'b':
+            self.game_state.logger.add_message("Save cancelled. Returning to game.")
+            return False
+        if not filename:
+            self.game_state.logger.add_message("Save cancelled.")
+            return False
+
+        game_state_data = {
+            "player": self.game_state.player.to_dict(),
+            "map": self.game_state.game_map.to_dict(),
+            "map_width": self.game_state.game_map.width,
+            "map_height": self.game_state.game_map.height,
+            "log": self.game_state.logger.get_messages()
+        }
+        message = self.game_state.save_manager.save_game(game_state_data, filename)
+        self.game_state.logger.add_message(message)
+        return False
+
+    def _handle_blacksmith_command(self):
+        if self.game_state.interaction_manager.is_player_in_blacksmith_shop():
+            self.game_state.current_menu = self.game_state.blacksmith_menu
+        return False
+
+    def _handle_inventory_command(self):
+        self.game_state.current_menu = self.game_state.inventory_menu
+        return False
+
+    def _handle_settings_command(self):
+        self.game_state.game_engine.display_settings_menu()
+        return False
+
+    def _handle_special_tile_command(self, key, tile_char):
+        if key == 'y':
+            self.game_state.interaction_manager.travel()
+            return False
+        return False
+
+    def _check_and_perform_autosave(self, moved, prev_x, prev_y):
+        if moved and (self.game_state.player.x != prev_x or self.game_state.player.y != prev_y):
+            self.game_state.step_count += 1
+            if self.game_state.settings_manager.get_setting("autosave_enabled") and \
+               self.game_state.step_count >= self.game_state.settings_manager.get_setting("autosave_interval"):
+                game_state_data = {
+                    "player": self.game_state.player.to_dict(),
+                    "map": self.game_state.game_map.to_dict(),
+                    "map_width": self.game_state.game_map.width,
+                    "map_height": self.game_state.game_map.height,
+                    "log": self.game_state.logger.get_messages()
+                }
+                message = self.game_state.save_manager.save_game(game_state_data, "autosave", is_autosave=True)
+                self.game_state.logger.add_message(message)
+                self.game_state.step_count = 0
+            return True
+        return False
 
     def handle_command(self):
-        if self.game.on_special_tile:
-            tile_char = self.game.interaction_manager.current_interaction_tile.character
+        # Clear any previous temporary message at the start of a new command handling cycle
+        self.game_state.current_message = None
+
+        moved = False
+        prev_x, prev_y = self.game_state.player.x, self.game_state.player.y
+
+        # Display blacksmith prompt if applicable
+        if self.game_state.interaction_manager.is_player_in_blacksmith_shop() and not self.game_state.current_menu:
+            self.game_state.ui_manager.display_blacksmith_shop_prompt()
+
+        if self.game_state.on_special_tile:
+            tile_char = self.game_state.interaction_manager.current_interaction_tile.character
             prompt_message = ""
             if tile_char == 'X':
                 prompt_message = "(y to go to dungeon)"
@@ -19,57 +114,37 @@ class CommandHandler:
             elif tile_char == 'C':
                 prompt_message = "(y to return to City Center)"
 
-            key = input(f"Enter a command (w/a/s/d to move, {prompt_message}): ").lower()
+            key = self.game_state.ui_manager.get_input(f"Enter a command (w/a/s/d to move, {prompt_message}): ").lower()
             if key == 'y':
-                self.game.interaction_manager.travel()
-                return False # No movement, but action taken
-        else:
-            key = input("Enter a command (w/a/s/d to move, q to quit, p to save): ").lower()
-        
-        # Store player's current position before moving
-        prev_x, prev_y = self.game.player.x, self.game.player.y
-
-        moved = False
-        if key == 'w':
-            self.game.player.move(0, -1, self.game.game_map)
-            moved = True
-        elif key == 's':
-            self.game.player.move(0, 1, self.game.game_map)
-            moved = True
-        elif key == 'a':
-            self.game.player.move(-1, 0, self.game.game_map)
-            moved = True
-        elif key == 'd':
-            self.game.player.move(1, 0, self.game.game_map)
-            moved = True
-        elif key == 'q':
-            self.game.is_running = False
-            return False # Indicate no movement, but game is quitting
-        elif key == 'p':
-            print("--- Save Game ---")
-            available_saves = self.game.save_manager.list_saves()
-            if available_saves:
-                print("Existing saves:")
-                for i, save_name in enumerate(available_saves):
-                    print(f"  - {save_name}")
+                self.game_state.interaction_manager.travel()
+                return
+            elif key in ['w', 'a', 's', 'd']:
+                moved, prev_x, prev_y = self._handle_movement_command(key)
             else:
-                print("No existing saves.")
-            filename = input("Enter save filename (entering an existing name will overwrite it): ")
-            self.game.save_manager.save_game(self.game, filename)
-            return False # Don't process movement after saving
-        elif self.game.on_special_tile and key not in ['w', 'a', 's', 'd']:
-            print("Invalid command. Please use w/a/s/d to move or y to advance.")
-            return False
-        elif not self.game.on_special_tile and key not in ['w', 'a', 's', 'd', 'q', 'p']:
-            print("Invalid command. Please use w/a/s/d to move, q to quit, or p to save.")
-            return False
+                self.game_state.logger.add_message("Invalid command. Please use w/a/s/d to move or y to advance.")
+                return
+        else:
+            key = self.game_state.ui_manager.get_input("Enter a command (w/a/s/d to move, q to quit, p to save, i for inventory, o for settings): ").lower()
 
-        # Check for autosave after a valid move
-        if moved and (self.game.player.x != prev_x or self.game.player.y != prev_y): # Only count steps if player actually moved
-            self.game.step_count += 1
-            if self.game.settings_manager.get_setting("autosave_enabled") and \
-               self.game.step_count >= self.game.settings_manager.get_setting("autosave_interval"):
-                self.game.save_manager.save_game(self.game, "autosave", is_autosave=True)
-                self.game.step_count = 0 # Reset step counter after autosave
-            return True # Indicate movement occurred
-        return False # No movement occurred
+            if key in ['w', 'a', 's', 'd']:
+                moved, prev_x, prev_y = self._handle_movement_command(key)
+            elif key == 'q':
+                self._handle_quit_command()
+                return
+            elif key == 'p':
+                self._handle_save_command()
+                return
+            elif key == 'b':
+                self._handle_blacksmith_command()
+                return
+            elif key == 'i':
+                self._handle_inventory_command()
+                return
+            elif key == 'o':
+                self._handle_settings_command()
+                return
+            else:
+                self.game_state.logger.add_message("Invalid command. Please use w/a/s/d to move, q to quit, p to save, b for blacksmith, i for inventory, or o for settings.")
+                return
+
+        self._check_and_perform_autosave(moved, prev_x, prev_y)
