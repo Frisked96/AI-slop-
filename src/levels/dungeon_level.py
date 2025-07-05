@@ -1,5 +1,5 @@
 import random
-from ..tiles import FloorTile, NextMapTile
+from ..tiles import FloorTile, NextMapTile, TrapTile
 from .__init__ import Level
 
 # Debug flag to force the 'X' tile to spawn near the player
@@ -43,7 +43,41 @@ class DungeonLevel(Level):
         else:
             grid, next_map_tile_pos = self._place_random_x_tile(grid, next_map_tile_pos, player_spawn_pos[0], player_spawn_pos[1])
 
+        # Spawn trap tiles
+        if game_state and game_state.dungeon_level >= 3:
+            self._place_traps(grid, game_state, player_spawn_pos, next_map_tile_pos)
+
         return grid, room_centers, next_map_tile_pos, player_spawn_pos
+
+    def _place_traps(self, grid, game_state, player_spawn_pos, next_map_tile_pos):
+        placed_traps = 0
+        max_trap_spawns = 2 # As per requirement
+
+        # Create a list of possible spawn locations (walkable floor tiles)
+        possible_spawn_points = []
+        for y in range(self.height):
+            for x in range(self.width):
+                # Check if it's a FloorTile, not player spawn, and not next map tile
+                is_floor = isinstance(grid[y][x], FloorTile)
+                is_player_spawn = (player_spawn_pos and x == player_spawn_pos[0] and y == player_spawn_pos[1])
+                is_next_map_tile = (next_map_tile_pos and x == next_map_tile_pos[0] and y == next_map_tile_pos[1])
+
+                if is_floor and not is_player_spawn and not is_next_map_tile:
+                    possible_spawn_points.append((x, y))
+
+        random.shuffle(possible_spawn_points)
+
+        for _ in range(max_trap_spawns):
+            if not possible_spawn_points:
+                break # No more valid spots to place traps
+
+            spawn_x, spawn_y = possible_spawn_points.pop()
+            trap_char = '.' # Default character
+            if game_state and game_state.settings_manager:
+                if game_state.settings_manager.get_setting("debug_visible_traps", False):
+                    trap_char = '$'
+            grid[spawn_y][spawn_x] = TrapTile(character=trap_char)
+            placed_traps += 1
 
     def _place_random_x_tile(self, grid, next_map_tile_pos, player_spawn_x, player_spawn_y):
         max_attempts = 1000

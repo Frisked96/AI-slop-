@@ -1,10 +1,11 @@
+import random
 from .levels.city_center import CityCenterLevel
 from .levels.east_sector import EastSectorLevel
 from .levels.west_sector import WestSectorLevel
 from .levels.south_sector import SouthSectorLevel
 from .levels.north_sector import NorthSectorLevel
 from .levels.dungeon_level import DungeonLevel
-from .tiles import WallTile
+from .tiles import WallTile, FloorTile, TrapTile
 
 class MapGenerator:
     _level_generators = {
@@ -40,5 +41,8 @@ class MapGenerator:
         # Set player position after map generation is complete
         if player_spawn_pos:
             game_state.player.x, game_state.player.y = player_spawn_pos
+
+        
+
 
         return grid, room_centers, next_map_tile_pos

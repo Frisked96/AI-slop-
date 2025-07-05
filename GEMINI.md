@@ -58,6 +58,11 @@ This `GEMINI.md` file stores project-specific information and conventions to ass
     *   `item_factory.py`: Centralizes the creation of item instances from data.
 *   **Spawn Management**:
     *   `spawn_manager.py`: Provides a centralized and reusable system for finding suitable spawn positions for entities on a map.
+*   **Fog of War**:
+    *   A line-of-sight (LOS) based fog of war system is implemented for dungeon maps.
+    *   Tiles can be in one of three states: Unseen, Explored, or Visible.
+    *   City and sector maps are always fully visible.
+    *   The `fov.py` module contains the logic for calculating the player's field of view.
 *   **Debug Features**: A temporary debug flag `DEBUG_FORCE_X_TILE_NEAR_PLAYER` exists in `map.py`. When set to `True`, it forces the 'X' tile to spawn one step horizontally from the player's starting position for easier testing of interactions. This flag should generally remain `False` unless actively debugging.
 
 ## 3. Future Expansion Considerations

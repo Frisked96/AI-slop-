@@ -37,8 +37,5 @@ def main():
     menu = Menu(initial_game_state, map_width, map_height)
     menu.run()
 
-    menu = Menu(initial_game_state, map_width, map_height)
-    menu.run()
-
 if __name__ == "__main__":
     main()

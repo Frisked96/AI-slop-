@@ -1,4 +1,5 @@
 import os
+from .tiles import TrapTile # Ensure TrapTile is imported at the top
 
 class UIManager:
     def __init__(self):
@@ -18,15 +19,24 @@ class UIManager:
         for y in range(game_map.height):
             row_str = ""
             for x in range(game_map.width):
-                tile_char = game_map.get_tile_type(x, y)
-                if x == player.x and y == player.y:
-                    row_str += '@'
+                tile = game_map.grid[y][x]
+                if (x, y) in game_map.visible_tiles:
+                    if x == player.x and y == player.y:
+                        row_str += '@'
+                    else:
+                        row_str += tile.character
+                elif tile.is_explored:
+                    # Render explored tiles with a shaded character
+                    row_str += '░'
                 else:
-                    row_str += tile_char
+                    row_str += ' '  # Unseen tiles
             print(row_str)
 
-    def display_player_stats(self, player):
-        print(f"Health: {player.health}/{player.max_health} Attack: {player.attack} Defense: {player.defense})")
+    def display_player_stats(self, player, game_state):
+        stats_string = f"Health: {player.health}/{player.max_health} Attack: {player.attack} Defense: {player.defense}"
+        if game_state and game_state.game_map and game_state.game_map.current_map_type == "dungeon":
+            stats_string += f" Dungeon Level: {game_state.dungeon_level}"
+        print(stats_string)
 
     def display_log(self, messages):
         print("\n--- Log ---")

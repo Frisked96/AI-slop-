@@ -15,6 +15,7 @@ class GameState:
         self.is_running = True
         self.step_count = 0
         self.on_special_tile = False
+        self.dungeon_level = 1  # Initialize dungeon level
 
     def to_dict(self):
         return {
@@ -24,6 +25,7 @@ class GameState:
             "is_running": self.is_running,
             "step_count": self.step_count,
             "on_special_tile": self.on_special_tile,
+            "dungeon_level": self.dungeon_level,  # Add dungeon_level to dictionary
             "log": self.logger.get_messages() if self.logger else []
         }
 
@@ -39,6 +41,7 @@ class GameState:
         game_state.is_running = data.get("is_running", True)
         game_state.step_count = data.get("step_count", 0)
         game_state.on_special_tile = data.get("on_special_tile", False)
+        game_state.dungeon_level = data.get("dungeon_level", 1)  # Load dungeon_level, default to 1
         if logger and "log" in data:
             for msg in data["log"]:
                 logger.add_message(msg)

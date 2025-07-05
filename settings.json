@@ -3,5 +3,6 @@
     "autosave_interval": 3,
     "map_width": 100,
     "map_height": 20,
-    "autosave_overwrite_behavior": "ask_once"
+    "autosave_overwrite_behavior": "ask_once",
+    "debug_visible_traps": false
 }

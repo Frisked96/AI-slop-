@@ -41,6 +41,7 @@ class Menu:
         # Pass game_state to Map constructor so it can be used by MapGenerator and SpawnManager
         city_map = Map(self.map_width, self.map_height, map_type="city_center", game_state=self.game_state)
         self.game_state.game_map = city_map
+        self.game_state.game_map.update_fov(self.game_state.player)
 
         self.game_state.is_running = True
         self.game_state.step_count = 0

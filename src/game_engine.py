@@ -25,6 +25,9 @@ class GameEngine:
                 self.game_state.current_menu.display()
             self.process_input()
             self.game_state.interaction_manager.handle_interactions()
+            if self.game_state.player.moved:
+                self.game_state.game_map.update_fov(self.game_state.player)
+                self.game_state.player.moved = False
 
     def process_input(self):
         if self.game_state.current_menu:
@@ -44,6 +47,7 @@ class GameEngine:
 
     def render(self):
         self.game_state.ui_manager.display_map(self.game_state.game_map, self.game_state.player)
-        self.game_state.ui_manager.display_player_stats(self.game_state.player)
+        # Pass game_state to display_player_stats
+        self.game_state.ui_manager.display_player_stats(self.game_state.player, self.game_state)
         if self.game_state.logger:
             self.game_state.ui_manager.display_log(self.game_state.logger.get_messages())

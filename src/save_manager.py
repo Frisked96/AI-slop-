@@ -63,6 +63,7 @@ class SaveManager:
 
         loaded_player = Player.from_dict(game_state_data["player"])
         loaded_map = Map.from_dict(game_state_data["map"])
+        loaded_map.update_fov(loaded_player)
         
         # Pass the logger to the GameState
         game_state = GameState.from_dict(game_state_data, self.settings_manager, self, self.ui_manager, logger)

@@ -5,6 +5,7 @@ class Player(Entity):
     def __init__(self, x, y):
         super().__init__(x, y, health=100, attack=10, defense=5) # Initial player stats
         self.inventory = [] # Initialize player inventory
+        self.moved = True
 
     def _can_move_to(self, x, y, game_map):
         return not game_map.is_wall(x, y)
@@ -50,10 +51,13 @@ class Player(Entity):
                 return
 
     def move(self, dx, dy, game_map):
+        initial_x, initial_y = self.x, self.y
         if dx != 0 and dy == 0: # Horizontal movement
             self._handle_horizontal_move(dx, game_map)
         elif dy != 0 and dx == 0: # Vertical movement
             self._handle_vertical_move(dy, game_map)
+        if self.x != initial_x or self.y != initial_y:
+            self.moved = True
 
     def to_dict(self):
         data = super().to_dict()

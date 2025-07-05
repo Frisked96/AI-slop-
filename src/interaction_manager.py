@@ -1,5 +1,5 @@
 from .map import Map
-from .tiles import NextMapTile, NorthExitTile, EastExitTile, SouthExitTile, WestExitTile, CityCenterEntranceTile, BlacksmithShopTile, DoorTile
+from .tiles import NextMapTile, NorthExitTile, EastExitTile, SouthExitTile, WestExitTile, CityCenterEntranceTile, BlacksmithShopTile, DoorTile, TrapTile
 
 class InteractionManager:
     def __init__(self, game_state):
@@ -21,6 +21,9 @@ class InteractionManager:
         self.game_state.game_map = Map(self.game_state.game_map.width, self.game_state.game_map.height, map_type=map_type, entry_direction=entry_direction, game_state=self.game_state)
 
     def _handle_next_map_tile(self):
+        if self.game_state.game_map.current_map_type == "dungeon":
+            self.game_state.dungeon_level += 1
+            self.game_state.logger.add_message(f"Descending to Dungeon Level {self.game_state.dungeon_level}...")
         self._transition_map("Generating new dungeon map...", "dungeon")
 
     def _handle_north_exit_tile(self):
@@ -43,14 +46,50 @@ class InteractionManager:
 
     def handle_interactions(self):
         player_x, player_y = self.game_state.player.x, self.game_state.player.y
-        current_tile = self.game_state.game_map.grid[player_y][player_x]
+        game_map = self.game_state.game_map
+        player_on_special_tile_this_turn = False # Flag to track if player ends up on a special tile
 
-        if type(current_tile) in self._tile_interactions:
+        # Proximity Trap Activation Logic (반경 1타일 내 함정 활성화 및 발동)
+        # Iterate through a 3x3 grid around the player
+        for y_offset in range(-1, 2):  # -1, 0, 1
+            for x_offset in range(-1, 2):  # -1, 0, 1
+                check_x, check_y = player_x + x_offset, player_y + y_offset
+
+                # Check map boundaries
+                if 0 <= check_y < game_map.height and 0 <= check_x < game_map.width:
+                    tile_to_check = game_map.grid[check_y][check_x]
+                    if isinstance(tile_to_check, TrapTile):
+                        # Reveal the trap if it's not already (changes char to '+')
+                        if not tile_to_check.is_revealed:
+                            tile_to_check.reveal()
+                            # Optional: Log trap reveal if distinct from trigger
+                            # self.game_state.logger.add_message(f"Trap at ({check_x}, {check_y}) revealed by proximity!")
+
+                        # Attempt to trigger the trap. The trap itself ensures it only triggers once.
+                        # This will also handle damage and logging if it's the first time.
+                        tile_to_check.trigger(self.game_state.player, self.game_state)
+
+                        # If the player is currently ON this (now revealed/triggered) trap tile
+                        if check_x == player_x and check_y == player_y:
+                            player_on_special_tile_this_turn = True
+                            self.current_interaction_tile = tile_to_check
+
+
+        # Standard Tile Interactions (Doors, Exits, etc.)
+        # This needs to be checked for the tile the player is CURRENTLY standing on,
+        # if it wasn't already handled as a trap.
+        current_tile_at_player_pos = game_map.grid[player_y][player_x]
+        if not player_on_special_tile_this_turn and type(current_tile_at_player_pos) in self._tile_interactions:
+            player_on_special_tile_this_turn = True
+            self.current_interaction_tile = current_tile_at_player_pos
+
+        # Update game_state based on whether the player landed on any special tile
+        if player_on_special_tile_this_turn:
             self.game_state.on_special_tile = True
-            self.current_interaction_tile = current_tile
         else:
             self.game_state.on_special_tile = False
             self.current_interaction_tile = None
+
 
     def is_player_in_blacksmith_shop(self):
         if self.game_state.game_map.current_map_type != "city_center":
