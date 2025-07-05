@@ -44,6 +44,7 @@ class GameEngine:
 
     def render(self):
         self.game_state.ui_manager.display_map(self.game_state.game_map, self.game_state.player)
-        self.game_state.ui_manager.display_player_stats(self.game_state.player)
+        # Pass game_state to display_player_stats
+        self.game_state.ui_manager.display_player_stats(self.game_state.player, self.game_state)
         if self.game_state.logger:
             self.game_state.ui_manager.display_log(self.game_state.logger.get_messages())

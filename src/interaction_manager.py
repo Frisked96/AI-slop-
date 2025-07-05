@@ -21,6 +21,9 @@ class InteractionManager:
         self.game_state.game_map = Map(self.game_state.game_map.width, self.game_state.game_map.height, map_type=map_type, entry_direction=entry_direction, game_state=self.game_state)
 
     def _handle_next_map_tile(self):
+        if self.game_state.game_map.current_map_type == "dungeon":
+            self.game_state.dungeon_level += 1
+            self.game_state.logger.add_message(f"Descending to Dungeon Level {self.game_state.dungeon_level}...")
         self._transition_map("Generating new dungeon map...", "dungeon")
 
     def _handle_north_exit_tile(self):
