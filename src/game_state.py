@@ -1,5 +1,11 @@
+from .ui.ui_manager import UIManager
+from .utils.logger import Logger
+from .systems.save_manager import SaveManager
+
+
+
 class GameState:
-    def __init__(self, player=None, game_map=None, settings_manager=None, save_manager=None, ui_manager=None, command_handler=None, interaction_manager=None, blacksmith_menu=None, logger=None, game_engine=None, spawn_manager=None):
+    def __init__(self, player=None, game_map=None, settings_manager=None, save_manager=None, ui_manager:UIManager =None, command_handler=None, interaction_manager=None, inventory_menu=None, minimap_menu=None, logger: Logger = None, game_engine=None, spawn_manager=None, event_manager=None):
         self.player = player
         self.game_map = game_map
         self.settings_manager = settings_manager
@@ -7,10 +13,12 @@ class GameState:
         self.ui_manager = ui_manager
         self.command_handler = command_handler
         self.interaction_manager = interaction_manager
-        self.blacksmith_menu = blacksmith_menu
+        self.inventory_menu = inventory_menu
+        self.minimap_menu = minimap_menu
         self.logger = logger
         self.game_engine = game_engine
         self.spawn_manager = spawn_manager
+        self.event_manager = event_manager # Added event_manager
         self.current_menu = None
         self.is_running = True
         self.step_count = 0
@@ -30,13 +38,16 @@ class GameState:
         }
 
     @classmethod
-    def from_dict(cls, data, settings_manager, save_manager, ui_manager, logger):
+    def from_dict(cls, data, settings_manager, save_manager, ui_manager, logger, event_manager=None, player=None, game_map=None):
         # Note: Player and Map will be reconstructed by SaveManager
         game_state = cls(
             settings_manager=settings_manager,
             save_manager=save_manager,
             ui_manager=ui_manager,
-            logger=logger
+            logger=logger,
+            event_manager=event_manager, # Pass event_manager to from_dict
+            player=player, # Pass player to from_dict
+            game_map=game_map # Pass game_map to from_dict
         )
         game_state.is_running = data.get("is_running", True)
         game_state.step_count = data.get("step_count", 0)

@@ -1,8 +1,13 @@
 {
     "autosave_enabled": true,
     "autosave_interval": 3,
-    "map_width": 100,
-    "map_height": 20,
+    "map_width": 200,
+    "map_height": 200,
+    "camera_width": 80,
+    "camera_height": 24,
     "autosave_overwrite_behavior": "ask_once",
-    "debug_visible_traps": false
+    "debug_visible_traps": false,
+    "num_rooms": 80,
+    "min_room_size": 5,
+    "max_room_size": 10
 }
